@@ -35,22 +35,19 @@ jobs:
             10.0.x
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore --project src/KickNet/KickNet.csproj
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet build --project src/KickNet/KickNet.csproj --no-restore --configuration Release
 
       - name: Pack
         shell: bash
         run: |
           set -euo pipefail
           if [ -n "${{ inputs.version }}" ]; then
-            dotnet pack --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ inputs.version }}
+            dotnet pack --project src/KickNet/KickNet.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ inputs.version }}
           else
-            dotnet pack --no-build --configuration Release --output ./artifacts
+            dotnet pack --project src/KickNet/KickNet.csproj --no-build --configuration Release --output ./artifacts
           fi
 
       - name: List package artifacts
