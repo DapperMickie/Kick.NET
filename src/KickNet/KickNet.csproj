@@ -12,7 +12,7 @@
     <Company>Dapper Dino</Company>
     <PackageTags>kick sdk api oauth webhook dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/DapperMickie/KickNet</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DapperMickie/Kick.Net</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnablePackageValidation>true</EnablePackageValidation>
