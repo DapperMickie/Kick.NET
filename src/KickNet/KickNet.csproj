@@ -11,10 +11,11 @@
     <Authors>OpenAI</Authors>
     <PackageTags>kick sdk api oauth webhook dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/KickEngineering/KickDevDocs</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DapperMickie/KickNet</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnablePackageValidation>true</EnablePackageValidation>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
