@@ -231,6 +231,32 @@ public sealed class KickSdkTests
     }
 
     [Fact]
+    public async Task ExperimentalVideos_DoNotUseParentTokenProvider()
+    {
+        var handler = new SequenceHandler(
+            """
+            [{"id":123,"title":"Unauthenticated VOD"}]
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = new KickClient(
+            httpClient,
+            new ThrowingAccessTokenProvider(),
+            new KickClientOptions
+            {
+                WebsiteBaseUri = new Uri("https://kick.com/"),
+                EnableExperimentalWebsiteApi = true,
+            });
+
+        var videos = await client.Experimental.Videos.GetByChannelAsync("xqc");
+
+        Assert.NotNull(videos);
+        Assert.Single(videos);
+        Assert.Equal("Unauthenticated VOD", videos[0].Title);
+        Assert.Null(handler.Requests[0].Headers.Authorization);
+    }
+
+    [Fact]
     public async Task ExperimentalVideos_GetLatestByChannel_UsesExpectedRoute()
     {
         var handler = new SequenceHandler(
@@ -287,6 +313,35 @@ public sealed class KickSdkTests
         Assert.Equal("clip-id", clip.Id);
         Assert.Equal("https://clips.example.test/clip.m3u8", clip.VideoUrl);
         Assert.Equal("https://kick.com/api/v2/clips/clip-slug", handler.Requests[0].RequestUri!.ToString());
+        Assert.Null(handler.Requests[0].Headers.Authorization);
+    }
+
+    [Fact]
+    public async Task ExperimentalClips_DoNotUseParentTokenProvider()
+    {
+        var handler = new SequenceHandler(
+            """
+            [{"id":"clip-id","title":"Unauthenticated Clip"}]
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = new KickClient(
+            httpClient,
+            new ThrowingAccessTokenProvider(),
+            new KickClientOptions
+            {
+                WebsiteBaseUri = new Uri("https://kick.com/"),
+                EnableExperimentalWebsiteApi = true,
+            });
+
+        var clips = await client.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest
+        {
+            Channel = "xqc",
+        });
+
+        Assert.NotNull(clips);
+        Assert.Single(clips);
+        Assert.Equal("Unauthenticated Clip", clips[0].Title);
         Assert.Null(handler.Requests[0].Headers.Authorization);
     }
 
@@ -452,5 +507,11 @@ public sealed class KickSdkTests
                 Content = new StringContent(content, Encoding.UTF8, "application/json"),
             };
         }
+    }
+
+    private sealed class ThrowingAccessTokenProvider : IKickAccessTokenProvider
+    {
+        public ValueTask<string> GetAccessTokenAsync(CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Experimental website clients must not request an access token.");
     }
 }
