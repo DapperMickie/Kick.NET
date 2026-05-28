@@ -23,6 +23,9 @@ jobs:
     permissions:
       contents: read
       id-token: write # Required for NuGet/login OIDC token issuance.
+    defaults:
+      run:
+        working-directory: src/KickNet
 
     steps:
       - name: Checkout
@@ -35,19 +38,19 @@ jobs:
             10.0.x
 
       - name: Restore
-        run: dotnet restore --project src/KickNet/KickNet.csproj
+        run: dotnet restore
 
       - name: Build
-        run: dotnet build --project src/KickNet/KickNet.csproj --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release
 
       - name: Pack
         shell: bash
         run: |
           set -euo pipefail
           if [ -n "${{ inputs.version }}" ]; then
-            dotnet pack --project src/KickNet/KickNet.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ inputs.version }}
+            dotnet pack --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ inputs.version }}
           else
-            dotnet pack --project src/KickNet/KickNet.csproj --no-build --configuration Release --output ./artifacts
+            dotnet pack --no-build --configuration Release --output ./artifacts
           fi
 
       - name: List package artifacts
