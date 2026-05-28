@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/KickNet.BotLoginWebhookSample/KickNet.BotLoginWebhookSample.csproj" />
+    <Project Path="samples/KickNet.ChannelDashboardSample/KickNet.ChannelDashboardSample.csproj" />
+    <Project Path="samples/KickNet.ChatOpsSample/KickNet.ChatOpsSample.csproj" />
+    <Project Path="samples/KickNet.ConsoleExamples/KickNet.ConsoleExamples.csproj" />
+    <Project Path="samples/KickNet.RewardOpsSample/KickNet.RewardOpsSample.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/KickNet/KickNet.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/KickNet.Tests/KickNet.Tests.csproj" />
+  </Folder>
+</Solution>
