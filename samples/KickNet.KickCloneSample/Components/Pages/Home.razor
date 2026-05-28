@@ -1,0 +1,171 @@
+@page "/"
+@rendermode InteractiveServer
+@inject KickBrowseService Browse
+@inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>Kick.NET Live</PageTitle>
+
+<section class="browse-shell">
+    <aside class="rail">
+        <div class="rail-title">Live channels</div>
+        <EditForm Model="_filters" OnValidSubmit="LoadAsync" FormName="filters">
+            <div class="filter-row">
+                <input @bind="_filters.Language" placeholder="Language" aria-label="Language" />
+                <input @bind="_filters.CategoryId" placeholder="Category ID" aria-label="Category ID" />
+                <button type="submit" title="Refresh streams">Refresh</button>
+            </div>
+        </EditForm>
+
+        @if (_loading)
+        {
+            <div class="empty-state">Loading streams...</div>
+        }
+        else if (_snapshot.Streams.Count == 0)
+        {
+            <div class="empty-state">No streams returned.</div>
+        }
+        else
+        {
+            <div class="stream-list">
+                @foreach (var stream in _snapshot.Streams)
+                {
+                    <button class="stream-row @SelectedClass(stream)" type="button" @onclick="() => SelectAsync(stream)">
+                        <img src="@ImageOrFallback(stream.ProfilePicture)" alt="" />
+                        <span>
+                            <strong>@DisplaySlug(stream)</strong>
+                            <small>@stream.ViewerCount?.ToString("N0") viewers</small>
+                        </span>
+                    </button>
+                }
+            </div>
+        }
+    </aside>
+
+    <section class="watch-panel">
+        @if (!Browse.IsConfigured)
+        {
+            <div class="setup-panel">
+                <h1>Kick browsing sample</h1>
+                <p>Set Kick client credentials before browsing streams or using OAuth login.</p>
+                <pre>{
+  "Kick": {
+    "ClientId": "your-client-id",
+    "ClientSecret": "your-client-secret",
+    "RedirectUri": "https://localhost:5001/oauth/callback"
+  }
+}</pre>
+            </div>
+        }
+        else if (_snapshot.SelectedChannel is null)
+        {
+            <div class="player-placeholder">
+                <span>Pick a live channel</span>
+                <strong>@(_snapshot.Stats?.TotalCount.ToString("N0") ?? "Live") streams online</strong>
+            </div>
+        }
+        else
+        {
+            var channel = _snapshot.SelectedChannel;
+            <div class="kick-player">
+                <iframe src="@BuildPlayerUrl(channel.Slug)"
+                        title="@($"{channel.Slug} Kick player")"
+                        frameborder="0"
+                        scrolling="no"
+                        allowfullscreen="true"
+                        allow="autoplay; fullscreen; picture-in-picture">
+                </iframe>
+            </div>
+
+            <div class="channel-strip">
+                <div>
+                    <h2>@channel.Slug</h2>
+                    <p>@channel.ChannelDescription</p>
+                </div>
+                <a href="@channel.Stream?.Url" target="_blank" rel="noreferrer" title="Open on Kick">Open on Kick</a>
+            </div>
+
+            <section class="chat-panel">
+                <div>
+                    <h3>Send chat message</h3>
+                    <p>OAuth users with <code>chat:write</code> can send as themselves.</p>
+                </div>
+                @if (HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true)
+                {
+                    <form method="post" action="/chat/send" class="chat-form">
+                        <input type="hidden" name="broadcasterUserId" value="@channel.BroadcasterUserId" />
+                        <input type="hidden" name="slug" value="@channel.Slug" />
+                        <input name="message" maxlength="500" placeholder="Type a message" aria-label="Chat message" />
+                        <button type="submit" title="Send chat message">Send</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="login-wide" href="/login">Sign in to chat</a>
+                }
+            </section>
+        }
+    </section>
+</section>
+
+@code {
+    private readonly FilterState _filters = new();
+    private BrowseSnapshot _snapshot = new([], null, null);
+    private bool _loading;
+    private string? _selectedSlug;
+
+    [SupplyParameterFromQuery(Name = "slug")]
+    public string? Slug { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _filters.Language = Browse.Options.DiscoverLanguage;
+        _selectedSlug = Slug;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _snapshot = await Browse.GetSnapshotAsync(_selectedSlug, _filters.CategoryId, _filters.Language, CancellationToken.None);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SelectAsync(Livestream stream)
+    {
+        _selectedSlug = stream.Slug;
+        if (!string.IsNullOrWhiteSpace(stream.Slug))
+        {
+            Navigation.NavigateTo($"/?slug={Uri.EscapeDataString(stream.Slug)}", replace: true);
+        }
+
+        await LoadAsync();
+    }
+
+    private string SelectedClass(Livestream stream) => stream.Slug == _selectedSlug ? "selected" : string.Empty;
+
+    private static string DisplaySlug(Livestream stream) =>
+        string.IsNullOrWhiteSpace(stream.Slug) ? $"Channel {stream.ChannelId}" : stream.Slug;
+
+    private static string BuildPlayerUrl(string? slug) =>
+        string.IsNullOrWhiteSpace(slug)
+            ? "about:blank"
+            : $"https://player.kick.com/{Uri.EscapeDataString(slug)}?autoplay=true&muted=false";
+
+    private static string ImageOrFallback(string? image) =>
+        string.IsNullOrWhiteSpace(image)
+            ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect width='120' height='80' fill='%2321262d'/%3E%3Cpath d='M22 58 48 28l19 20 13-14 18 24z' fill='%2351f08a'/%3E%3C/svg%3E"
+            : image;
+
+    private sealed class FilterState
+    {
+        public string? Language { get; set; }
+        public string? CategoryId { get; set; }
+    }
+}
