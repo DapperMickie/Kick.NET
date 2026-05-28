@@ -59,6 +59,7 @@ var kick = new KickClient(options: new KickClientOptions
     EnableExperimentalWebsiteApi = true,
 });
 
+var videos = await kick.Experimental.Videos.GetByChannelAsync("xqc");
 var latestVideos = await kick.Experimental.Videos.GetLatestByChannelAsync("xqc");
 var clips = await kick.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest
 {

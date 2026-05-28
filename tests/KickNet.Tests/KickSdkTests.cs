@@ -251,6 +251,26 @@ public sealed class KickSdkTests
     }
 
     [Fact]
+    public async Task ExperimentalVideos_GetByChannel_UsesExpectedRoute()
+    {
+        var handler = new SequenceHandler(
+            """
+            {"data":[{"id":123,"title":"Channel VOD"}]}
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var videos = await client.Experimental.Videos.GetByChannelAsync("xqc");
+
+        Assert.NotNull(videos);
+        Assert.Single(videos);
+        Assert.Equal("Channel VOD", videos[0].Title);
+        Assert.Equal("https://kick.com/api/v2/channels/xqc/videos", handler.Requests[0].RequestUri!.ToString());
+        Assert.Null(handler.Requests[0].Headers.Authorization);
+    }
+
+    [Fact]
     public async Task ExperimentalClips_GetBySlug_UsesExpectedRoute()
     {
         var handler = new SequenceHandler(
@@ -347,6 +367,7 @@ public sealed class KickSdkTests
         var client = CreateExperimentalClient(new HttpClient(new SequenceHandler()));
 
         await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Videos.GetByIdAsync(""));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Videos.GetByChannelAsync(""));
         await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Videos.GetLatestByChannelAsync(""));
         await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Clips.GetBySlugAsync(""));
         await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Clips.GetInfoAsync(""));

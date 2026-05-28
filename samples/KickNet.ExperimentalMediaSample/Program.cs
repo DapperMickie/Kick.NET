@@ -18,10 +18,11 @@ Console.WriteLine();
 
 try
 {
-    var videos = await kick.Experimental.Videos.GetLatestByChannelAsync(channel);
-    PrintVideos("Latest videos", videos, limit);
+    var videos = await kick.Experimental.Videos.GetByChannelAsync(channel);
+    PrintVideos("Videos", videos, limit);
 
-    var latestVideo = videos?.FirstOrDefault();
+    var latestVideos = await kick.Experimental.Videos.GetLatestByChannelAsync(channel);
+    var latestVideo = latestVideos?.FirstOrDefault();
     PrintLatestVideo(latestVideo);
 
     var clips = await kick.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest

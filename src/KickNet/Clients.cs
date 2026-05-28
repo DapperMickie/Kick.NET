@@ -250,6 +250,13 @@ public sealed class KickWebsiteVideosClient(HttpClient httpClient, KickClientOpt
         return GetAsync<KickWebsiteVideo>($"/api/v1/video/{videoId}", authenticated: false, cancellationToken: cancellationToken);
     }
 
+    public Task<IReadOnlyList<KickWebsiteVideo>?> GetByChannelAsync(string channel, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(channel);
+        return GetCollectionAsync<KickWebsiteVideo>($"/api/v2/channels/{channel}/videos", cancellationToken: cancellationToken);
+    }
+
     public Task<IReadOnlyList<KickWebsiteVideo>?> GetLatestByChannelAsync(string channel, CancellationToken cancellationToken = default)
     {
         EnsureEnabled();
