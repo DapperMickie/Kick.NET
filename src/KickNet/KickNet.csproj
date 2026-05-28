@@ -8,7 +8,8 @@
     <PackageId>KickNet</PackageId>
     <Title>Kick .NET SDK</Title>
     <Description>Typed .NET SDK for the KICK public API, OAuth flows, and webhooks.</Description>
-    <Authors>OpenAI</Authors>
+    <Authors>DapperMickie</Authors>
+    <Company>Dapper Dino</Company>
     <PackageTags>kick sdk api oauth webhook dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/DapperMickie/KickNet</RepositoryUrl>
