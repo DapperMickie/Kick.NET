@@ -47,6 +47,28 @@ var login = auth.CreateLoginRequest();
 // var session = await auth.ExchangeAuthorizationCodeAsync(code, login.CodeVerifier);
 ```
 
+## Experimental VODs and clips
+
+VOD/video and clip helpers are available behind an explicit opt-in:
+
+```csharp
+using Kick;
+
+var kick = new KickClient(options: new KickClientOptions
+{
+    EnableExperimentalWebsiteApi = true,
+});
+
+var latestVideos = await kick.Experimental.Videos.GetLatestByChannelAsync("xqc");
+var clips = await kick.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest
+{
+    Channel = "xqc",
+    Limit = 25,
+});
+```
+
+These clients use undocumented Kick website endpoints, not the official `api.kick.com/public/...` API. They may be blocked, changed, rate-limited, or removed by Kick without notice. Prefer official public API clients when Kick publishes stable VOD or clip endpoints.
+
 ## Projects
 
 - `src/KickNet`: the SDK package
@@ -55,6 +77,7 @@ var login = auth.CreateLoginRequest();
 - `samples/KickNet.RewardOpsSample`: reward and redemption workflows
 - `samples/KickNet.ChatOpsSample`: chat and moderation workflows
 - `samples/KickNet.ChannelDashboardSample`: channel inspection and metadata updates
+- `samples/KickNet.ExperimentalMediaSample`: experimental VOD/video and clip listing
 - `tests/KickNet.Tests`: test suite
 - `docs`: usage guides
 
@@ -62,6 +85,7 @@ var login = auth.CreateLoginRequest();
 
 ```bash
 dotnet run --project samples/KickNet.ConsoleExamples -- help
+dotnet run --project samples/KickNet.ExperimentalMediaSample -- xqc
 dotnet run --project samples/KickNet.RewardOpsSample -- help
 dotnet run --project samples/KickNet.ChatOpsSample -- help
 dotnet run --project samples/KickNet.ChannelDashboardSample

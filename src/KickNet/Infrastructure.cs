@@ -11,6 +11,8 @@ public sealed class KickClientOptions
 {
     public Uri ApiBaseUri { get; set; } = new("https://api.kick.com/");
     public Uri OAuthBaseUri { get; set; } = new("https://id.kick.com/");
+    public Uri WebsiteBaseUri { get; set; } = new("https://kick.com/");
+    public bool EnableExperimentalWebsiteApi { get; set; }
     public JsonSerializerOptions JsonSerializerOptions { get; } = CreateJsonSerializerOptions();
 
     internal static JsonSerializerOptions CreateJsonSerializerOptions()

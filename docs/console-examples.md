@@ -19,6 +19,7 @@ dotnet run --project samples/KickNet.ConsoleExamples -- help
 - `events`: event subscription examples
 - `livestreams`: livestream list and stats examples
 - `moderation`: moderation request examples with notes about user-scope requirements
+- `experimental-media`: VOD and clip lookup via undocumented website endpoints
 - `public-key`: fetch the KICK webhook verification public key
 - `webhooks`: local signature verification and event parsing example
 - `di`: dependency injection registration example
@@ -36,7 +37,10 @@ KICK_CHANNEL_REWARD_ID=01...
 KICK_REDEMPTION_IDS=01...,01...
 KICK_SUBSCRIPTION_ID=01...
 KICK_TARGET_USER_ID=7890
+KICK_ENABLE_EXPERIMENTAL_WEBSITE_API=true
 ```
+
+`experimental-media` uses opt-in website endpoints rather than the official KICK public API. These endpoints may be blocked, changed, rate-limited, or removed without notice.
 
 ## User-auth environment
 

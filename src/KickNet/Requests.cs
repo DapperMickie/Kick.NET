@@ -290,6 +290,29 @@ public sealed class GetLivestreamsRequest
     public string? Sort { get; init; }
 }
 
+public sealed class GetChannelWebsiteClipsRequest
+{
+    public string Channel { get; init; } = string.Empty;
+    public int? Page { get; init; }
+    public int? Limit { get; init; }
+    public string? Sort { get; init; }
+}
+
+public sealed class GetWebsiteClipsRequest
+{
+    public int? Page { get; init; }
+    public int? Limit { get; init; }
+    public string? Sort { get; init; }
+}
+
+public sealed class GetCategoryWebsiteClipsRequest
+{
+    public string Category { get; init; } = string.Empty;
+    public int? Page { get; init; }
+    public int? Limit { get; init; }
+    public string? Sort { get; init; }
+}
+
 public sealed class GetKicksLeaderboardRequest
 {
     public int? Top { get; init; }

@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Text.Json;
 
 namespace Kick;
 
@@ -22,6 +23,7 @@ public sealed class KickClient
         Livestreams = new KickLivestreamsClient(_httpClient, accessTokenProvider, _options);
         Moderation = new KickModerationClient(_httpClient, accessTokenProvider, _options);
         PublicKey = new KickPublicKeyClient(_httpClient, accessTokenProvider, _options);
+        Experimental = new KickExperimentalClient(_httpClient, _options);
         OAuth = new KickOAuthClient(_httpClient, options: _options);
     }
 
@@ -35,7 +37,20 @@ public sealed class KickClient
     public KickLivestreamsClient Livestreams { get; }
     public KickModerationClient Moderation { get; }
     public KickPublicKeyClient PublicKey { get; }
+    public KickExperimentalClient Experimental { get; }
     public KickOAuthClient OAuth { get; }
+}
+
+public sealed class KickExperimentalClient
+{
+    public KickExperimentalClient(HttpClient httpClient, KickClientOptions options)
+    {
+        Videos = new KickWebsiteVideosClient(httpClient, options);
+        Clips = new KickWebsiteClipsClient(httpClient, options);
+    }
+
+    public KickWebsiteVideosClient Videos { get; }
+    public KickWebsiteClipsClient Clips { get; }
 }
 
 public sealed class KickCategoriesClient(HttpClient httpClient, IKickAccessTokenProvider? tokenProvider, KickClientOptions options)
@@ -223,6 +238,122 @@ public sealed class KickLivestreamsClient(HttpClient httpClient, IKickAccessToke
 
     public Task<KickResponse<LivestreamStats>?> GetStatsAsync(CancellationToken cancellationToken = default)
         => GetAsync<KickResponse<LivestreamStats>>("/public/v1/livestreams/stats", cancellationToken: cancellationToken);
+}
+
+public sealed class KickWebsiteVideosClient(HttpClient httpClient, KickClientOptions options)
+    : KickExperimentalWebsiteClientBase(httpClient, options)
+{
+    public Task<KickWebsiteVideo?> GetByIdAsync(string videoId, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(videoId);
+        return GetAsync<KickWebsiteVideo>($"/api/v1/video/{videoId}", authenticated: false, cancellationToken: cancellationToken);
+    }
+
+    public Task<IReadOnlyList<KickWebsiteVideo>?> GetLatestByChannelAsync(string channel, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(channel);
+        return GetCollectionAsync<KickWebsiteVideo>($"/api/v2/channels/{channel}/videos/latest", cancellationToken: cancellationToken);
+    }
+}
+
+public sealed class KickWebsiteClipsClient(HttpClient httpClient, KickClientOptions options)
+    : KickExperimentalWebsiteClientBase(httpClient, options)
+{
+    public Task<KickWebsiteClip?> GetBySlugAsync(string clip, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(clip);
+        return GetAsync<KickWebsiteClip>($"/api/v2/clips/{clip}", authenticated: false, cancellationToken: cancellationToken);
+    }
+
+    public Task<KickWebsiteClip?> GetInfoAsync(string clip, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(clip);
+        return GetAsync<KickWebsiteClip>($"/api/v2/clips/{clip}/info", authenticated: false, cancellationToken: cancellationToken);
+    }
+
+    public Task<IReadOnlyList<KickWebsiteClip>?> GetByChannelAsync(GetChannelWebsiteClipsRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Channel);
+        return GetCollectionAsync<KickWebsiteClip>(
+            $"/api/v2/channels/{request.Channel}/clips",
+            query => query.Add("page", request.Page).Add("limit", request.Limit).Add("sort", request.Sort),
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<KickWebsiteClip>?> GetAsync(GetWebsiteClipsRequest? request = null, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        request ??= new GetWebsiteClipsRequest();
+        return GetCollectionAsync<KickWebsiteClip>(
+            "/api/v2/clips",
+            query => query.Add("page", request.Page).Add("limit", request.Limit).Add("sort", request.Sort),
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<KickWebsiteClip>?> GetByCategoryAsync(GetCategoryWebsiteClipsRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureEnabled();
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Category);
+        return GetCollectionAsync<KickWebsiteClip>(
+            $"/api/v2/categories/{request.Category}/clips",
+            query => query.Add("page", request.Page).Add("limit", request.Limit).Add("sort", request.Sort),
+            cancellationToken);
+    }
+}
+
+public abstract class KickExperimentalWebsiteClientBase : KickServiceClientBase
+{
+    private readonly KickClientOptions _options;
+
+    protected KickExperimentalWebsiteClientBase(HttpClient httpClient, KickClientOptions options)
+        : base(httpClient, accessTokenProvider: null, options.JsonSerializerOptions, options.WebsiteBaseUri)
+    {
+        _options = options;
+    }
+
+    protected void EnsureEnabled()
+    {
+        if (!_options.EnableExperimentalWebsiteApi)
+        {
+            throw new InvalidOperationException("Experimental KICK website API clients are disabled. Set KickClientOptions.EnableExperimentalWebsiteApi to true to use them.");
+        }
+    }
+
+    protected async Task<IReadOnlyList<T>?> GetCollectionAsync<T>(string path, Action<KickQueryBuilder>? buildQuery = null, CancellationToken cancellationToken = default)
+    {
+        var json = await GetAsync<JsonElement>(path, buildQuery, authenticated: false, cancellationToken: cancellationToken).ConfigureAwait(false);
+        if (json.ValueKind == JsonValueKind.Undefined || json.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (json.ValueKind == JsonValueKind.Array)
+        {
+            return json.Deserialize<IReadOnlyList<T>>(SerializerOptions);
+        }
+
+        if (json.ValueKind == JsonValueKind.Object && json.TryGetProperty("data", out var data))
+        {
+            if (data.ValueKind == JsonValueKind.Array)
+            {
+                return data.Deserialize<IReadOnlyList<T>>(SerializerOptions);
+            }
+
+            if (data.ValueKind == JsonValueKind.Object && data.TryGetProperty("data", out var nestedData) && nestedData.ValueKind == JsonValueKind.Array)
+            {
+                return nestedData.Deserialize<IReadOnlyList<T>>(SerializerOptions);
+            }
+        }
+
+        return null;
+    }
 }
 
 public sealed class KickModerationClient(HttpClient httpClient, IKickAccessTokenProvider? tokenProvider, KickClientOptions options)

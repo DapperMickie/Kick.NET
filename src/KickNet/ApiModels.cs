@@ -78,6 +78,67 @@ public sealed class LivestreamStats
     public int TotalCount { get; init; }
 }
 
+public sealed class KickWebsiteVideo
+{
+    public int Id { get; init; }
+    public string? Uuid { get; init; }
+    public string? Slug { get; init; }
+    public string? Title { get; init; }
+    public string? Description { get; init; }
+    public string? Thumbnail { get; init; }
+    public string? Source { get; init; }
+    public string? Stream { get; init; }
+    public int? Duration { get; init; }
+    public int? Views { get; init; }
+    public string? Language { get; init; }
+    public DateTimeOffset? CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
+    public KickWebsiteChannelSummary? Channel { get; init; }
+}
+
+public sealed class KickWebsiteClip
+{
+    public string? Id { get; init; }
+    public string? Slug { get; init; }
+    public string? Title { get; init; }
+    public string? Description { get; init; }
+    public string? Thumbnail { get; init; }
+    public string? VideoUrl { get; init; }
+    public string? HlsUrl { get; init; }
+    public int? Duration { get; init; }
+    public int? Views { get; init; }
+    public bool? IsLiked { get; init; }
+    public bool? IsPrivate { get; init; }
+    public DateTimeOffset? CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
+    public KickWebsiteChannelSummary? Channel { get; init; }
+    public KickWebsiteUserSummary? Creator { get; init; }
+    public KickWebsiteCategorySummary? Category { get; init; }
+}
+
+public sealed class KickWebsiteChannelSummary
+{
+    public int? Id { get; init; }
+    public string? Slug { get; init; }
+    public string? Username { get; init; }
+    public string? ProfilePicture { get; init; }
+}
+
+public sealed class KickWebsiteUserSummary
+{
+    public int? Id { get; init; }
+    public string? Username { get; init; }
+    public string? ProfilePicture { get; init; }
+}
+
+public sealed class KickWebsiteCategorySummary
+{
+    public int? Id { get; init; }
+    public string? Name { get; init; }
+    public string? Slug { get; init; }
+    public string? Thumbnail { get; init; }
+}
+
 public sealed class ChannelReward
 {
     public string? Id { get; init; }

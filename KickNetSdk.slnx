@@ -4,6 +4,7 @@
     <Project Path="samples/KickNet.ChannelDashboardSample/KickNet.ChannelDashboardSample.csproj" />
     <Project Path="samples/KickNet.ChatOpsSample/KickNet.ChatOpsSample.csproj" />
     <Project Path="samples/KickNet.ConsoleExamples/KickNet.ConsoleExamples.csproj" />
+    <Project Path="samples/KickNet.ExperimentalMediaSample/KickNet.ExperimentalMediaSample.csproj" />
     <Project Path="samples/KickNet.KickCloneSample/KickNet.KickCloneSample.csproj" />
     <Project Path="samples/KickNet.RewardOpsSample/KickNet.RewardOpsSample.csproj" />
   </Folder>

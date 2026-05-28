@@ -191,6 +191,170 @@ public sealed class KickSdkTests
     }
 
     [Fact]
+    public void KickClient_ExposesExperimentalMediaClients()
+    {
+        var client = new KickClient();
+
+        Assert.NotNull(client.Experimental);
+        Assert.NotNull(client.Experimental.Videos);
+        Assert.NotNull(client.Experimental.Clips);
+    }
+
+    [Fact]
+    public async Task ExperimentalClient_ThrowsWhenNotEnabled()
+    {
+        var client = new KickClient();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.Experimental.Videos.GetByIdAsync("123"));
+    }
+
+    [Fact]
+    public async Task ExperimentalVideos_GetById_UsesWebsiteBaseUri()
+    {
+        var handler = new SequenceHandler(
+            """
+            {"id":123,"uuid":"video-uuid","slug":"video-slug","title":"Test VOD","thumbnail":"https://example.test/thumb.jpg","duration":3600,"views":42,"language":"en","created_at":"2026-05-28T10:00:00Z","channel":{"id":7,"slug":"xqc","username":"xQc"}}
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var video = await client.Experimental.Videos.GetByIdAsync("123");
+
+        Assert.NotNull(video);
+        Assert.Equal(123, video.Id);
+        Assert.Equal("video-uuid", video.Uuid);
+        Assert.Equal("Test VOD", video.Title);
+        Assert.Equal("xqc", video.Channel!.Slug);
+        Assert.Equal("https://kick.com/api/v1/video/123", handler.Requests[0].RequestUri!.ToString());
+        Assert.Null(handler.Requests[0].Headers.Authorization);
+    }
+
+    [Fact]
+    public async Task ExperimentalVideos_GetLatestByChannel_UsesExpectedRoute()
+    {
+        var handler = new SequenceHandler(
+            """
+            [{"id":123,"title":"Latest VOD"}]
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var videos = await client.Experimental.Videos.GetLatestByChannelAsync("xqc");
+
+        Assert.NotNull(videos);
+        Assert.Single(videos);
+        Assert.Equal("Latest VOD", videos[0].Title);
+        Assert.Equal("https://kick.com/api/v2/channels/xqc/videos/latest", handler.Requests[0].RequestUri!.ToString());
+        Assert.Null(handler.Requests[0].Headers.Authorization);
+    }
+
+    [Fact]
+    public async Task ExperimentalClips_GetBySlug_UsesExpectedRoute()
+    {
+        var handler = new SequenceHandler(
+            """
+            {"id":"clip-id","slug":"clip-slug","title":"Test Clip","video_url":"https://clips.example.test/clip.m3u8","duration":30}
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var clip = await client.Experimental.Clips.GetBySlugAsync("clip-slug");
+
+        Assert.NotNull(clip);
+        Assert.Equal("clip-id", clip.Id);
+        Assert.Equal("https://clips.example.test/clip.m3u8", clip.VideoUrl);
+        Assert.Equal("https://kick.com/api/v2/clips/clip-slug", handler.Requests[0].RequestUri!.ToString());
+        Assert.Null(handler.Requests[0].Headers.Authorization);
+    }
+
+    [Fact]
+    public async Task ExperimentalClips_GetByChannel_AddsQuery()
+    {
+        var handler = new SequenceHandler(
+            """
+            {"data":[{"id":"clip-id","title":"Channel Clip"}]}
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var clips = await client.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest
+        {
+            Channel = "xqc",
+            Page = 2,
+            Limit = 25,
+            Sort = "date",
+        });
+
+        Assert.NotNull(clips);
+        Assert.Single(clips);
+        Assert.Equal("Channel Clip", clips[0].Title);
+        Assert.Equal("https://kick.com/api/v2/channels/xqc/clips?page=2&limit=25&sort=date", handler.Requests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task ExperimentalClips_GetGlobal_AddsQuery()
+    {
+        var handler = new SequenceHandler(
+            """
+            {"data":{"data":[{"id":"clip-id","title":"Global Clip"}]}}
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var clips = await client.Experimental.Clips.GetAsync(new GetWebsiteClipsRequest
+        {
+            Page = 1,
+            Limit = 50,
+            Sort = "views",
+        });
+
+        Assert.NotNull(clips);
+        Assert.Single(clips);
+        Assert.Equal("Global Clip", clips[0].Title);
+        Assert.Equal("https://kick.com/api/v2/clips?page=1&limit=50&sort=views", handler.Requests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task ExperimentalClips_GetByCategory_UsesExpectedRoute()
+    {
+        var handler = new SequenceHandler(
+            """
+            [{"id":"clip-id","title":"Category Clip"}]
+            """);
+
+        using var httpClient = new HttpClient(handler);
+        var client = CreateExperimentalClient(httpClient);
+
+        var clips = await client.Experimental.Clips.GetByCategoryAsync(new GetCategoryWebsiteClipsRequest
+        {
+            Category = "software-development",
+        });
+
+        Assert.NotNull(clips);
+        Assert.Single(clips);
+        Assert.Equal("Category Clip", clips[0].Title);
+        Assert.Equal("https://kick.com/api/v2/categories/software-development/clips", handler.Requests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task ExperimentalMediaClients_ValidateRequiredArguments()
+    {
+        var client = CreateExperimentalClient(new HttpClient(new SequenceHandler()));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Videos.GetByIdAsync(""));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Videos.GetLatestByChannelAsync(""));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Clips.GetBySlugAsync(""));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Clips.GetInfoAsync(""));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest()));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.Experimental.Clips.GetByCategoryAsync(new GetCategoryWebsiteClipsRequest()));
+    }
+
+    [Fact]
     public void WebhookVerifier_AndParser_Work()
     {
         using var rsa = RSA.Create(2048);
@@ -237,6 +401,17 @@ public sealed class KickSdkTests
         builder.AppendLine(Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo(), Base64FormattingOptions.InsertLineBreaks));
         builder.AppendLine("-----END PUBLIC KEY-----");
         return builder.ToString();
+    }
+
+    private static KickClient CreateExperimentalClient(HttpClient httpClient)
+    {
+        return new KickClient(
+            httpClient,
+            options: new KickClientOptions
+            {
+                WebsiteBaseUri = new Uri("https://kick.com/"),
+                EnableExperimentalWebsiteApi = true,
+            });
     }
 
     private sealed class SequenceHandler(params string[] responses) : HttpMessageHandler

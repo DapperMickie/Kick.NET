@@ -16,6 +16,7 @@ var commands = new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCa
     ["chat"] = RunChatExamplesAsync,
     ["events"] = RunEventExamplesAsync,
     ["livestreams"] = RunLivestreamExamplesAsync,
+    ["experimental-media"] = RunExperimentalMediaExamplesAsync,
     ["moderation"] = RunModerationExamplesAsync,
     ["public-key"] = RunPublicKeyExampleAsync,
     ["webhooks"] = RunWebhookExamplesAsync,
@@ -53,6 +54,8 @@ Task ShowHelpAsync()
           chat         Chat examples; may require a user-authenticated session depending on scopes
           events       Event subscription examples
           livestreams  Livestream listing and stats examples
+          experimental-media
+                       VOD and clip lookup through opt-in website endpoints
           moderation   Moderation request examples; may require user auth in practice
           public-key   Fetch the webhook public key
           webhooks     Verify and parse a webhook locally
@@ -72,6 +75,7 @@ Task ShowHelpAsync()
           KICK_SUBSCRIPTION_ID
           KICK_TARGET_USER_ID
           KICK_REDEMPTION_IDS
+          KICK_ENABLE_EXPERIMENTAL_WEBSITE_API
 
         User-auth environment:
           KICK_USER_CLIENT_ID
@@ -92,6 +96,7 @@ async Task RunAllExamplesAsync()
     await RunChatExamplesAsync();
     await RunEventExamplesAsync();
     await RunLivestreamExamplesAsync();
+    await RunExperimentalMediaExamplesAsync();
     await RunModerationExamplesAsync();
     await RunPublicKeyExampleAsync();
     await RunWebhookExamplesAsync();
@@ -297,6 +302,40 @@ async Task RunLivestreamExamplesAsync()
 
     var stats = await session.Client.Livestreams.GetStatsAsync();
     Console.WriteLine($"Livestream total count: {stats?.Data?.TotalCount ?? 0}");
+}
+
+async Task RunExperimentalMediaExamplesAsync()
+{
+    Section("Experimental Media");
+    Console.WriteLine("This sample uses undocumented Kick website endpoints, not the official public API.");
+
+    var channelSlug = Env("KICK_CHANNEL_SLUG") ?? "xqc";
+    DumpObject(new GetChannelWebsiteClipsRequest
+    {
+        Channel = channelSlug,
+        Limit = 25,
+    });
+
+    if (!string.Equals(Env("KICK_ENABLE_EXPERIMENTAL_WEBSITE_API"), "true", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.WriteLine("Set KICK_ENABLE_EXPERIMENTAL_WEBSITE_API=true to run this opt-in example.");
+        return;
+    }
+
+    var kick = new KickClient(options: new KickClientOptions
+    {
+        EnableExperimentalWebsiteApi = true,
+    });
+
+    var latestVideos = await kick.Experimental.Videos.GetLatestByChannelAsync(channelSlug);
+    Console.WriteLine($"Latest videos for '{channelSlug}': {latestVideos?.Count ?? 0}");
+
+    var clips = await kick.Experimental.Clips.GetByChannelAsync(new GetChannelWebsiteClipsRequest
+    {
+        Channel = channelSlug,
+        Limit = 25,
+    });
+    Console.WriteLine($"Clips for '{channelSlug}': {clips?.Count ?? 0}");
 }
 
 Task RunModerationExamplesAsync()

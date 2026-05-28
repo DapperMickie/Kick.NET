@@ -19,10 +19,14 @@ The repository now includes several focused samples, each centered on a differen
 - [samples/KickNet.ChannelDashboardSample](D:/Projects/Kick.NET/samples/KickNet.ChannelDashboardSample)
   Minimal API dashboard for channel inspection and metadata updates, with livestream discovery views.
 
+- [samples/KickNet.ExperimentalMediaSample](D:/Projects/Kick.NET/samples/KickNet.ExperimentalMediaSample)
+  Small console app that lists experimental website VOD/video and clip results for a channel.
+
 ## Which sample to start from
 
 - If you need OAuth and webhook handling, start with `KickNet.BotLoginWebhookSample`.
 - If you need a broad SDK reference, start with `KickNet.ConsoleExamples`.
+- If you need VOD/video or clip listing, start with `KickNet.ExperimentalMediaSample`.
 - If you are building moderator or broadcaster tooling, start with `KickNet.ChatOpsSample` or `KickNet.RewardOpsSample`.
 - If you are building a control panel or admin UI, start with `KickNet.ChannelDashboardSample`.
 
@@ -35,6 +39,8 @@ Most samples use one or more of these:
 - `KICK_BROADCASTER_USER_ID`
 - `KICK_REWARD_ID`
 - `KICK_REDEMPTION_IDS`
+- `KICK_CHANNEL_SLUG`
+- `KICK_MEDIA_LIMIT`
 - `KICK_USER_CLIENT_ID`
 - `KICK_USER_CLIENT_SECRET`
 - `Kick__ClientId`
